@@ -16,6 +16,9 @@
     "csv-parser": "^3.0.0",
     "xmlbuilder2": "^3.0.2"
   },
+  "scripts":{
+    "generate:inventoryfeed":"node index"
+  },
   "bugs": {
     "url": "https://github.com/singhuday/sfcc-inventory-feed/issues"
   },

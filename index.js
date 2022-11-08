@@ -2,17 +2,12 @@ const { create } = require("xmlbuilder2");
 const csv = require("csv-parser");
 var fs = require("fs");
 var results = [];
+const config = require('./config');
 
-// TOBE Change as per the requirment
-
-// NAME OF CSV input file
-const CSV_INPUT_FILE = "ks-na-master-catalog.csv";
-// NAME of XML output file 
-const XML_OUTPUT_FILE = "KS-NA-FP-DC-All-Stores-Inventory.xml";
-// ID of inventory ID 
-const INVENTORY_LIST_ID = "KS-NA-FP-DC-All-Stores-Inventory";
-
-fs.createReadStream(CSV_INPUT_FILE)
+fs.createReadStream(config.CSV_INPUT_FILE)
+    .on("error",function(error){
+    console.log("CSV file not found");
+  })
   .pipe(csv({skipLines: 1,headers:['ID']}))
   .on("data", (row) => {
     results.push(row.ID);
@@ -30,7 +25,7 @@ function createXML(list) {
     .ele("inventory")
     .att("xmlns", "http://www.demandware.com/xml/impex/inventory/2007-05-31");
   var inventoryList = doc.ele("inventory-list");
-  var header = inventoryList.ele("header").att("list-id", INVENTORY_LIST_ID);
+  var header = inventoryList.ele("header").att("list-id", config.INVENTORY_LIST_ID);
   header.ele("default-instock").txt("false");
   header.ele("description").txt("Product Sku US DC and US Stores");
   header.ele("use-bundle-inventory-only").txt("false");
@@ -49,7 +44,7 @@ function createXML(list) {
 
   const xml = doc.end({ prettyPrint: true });
 
-  fs.writeFile(XML_OUTPUT_FILE, xml, function () {
+  fs.writeFile(config.XML_OUTPUT_FILE, xml, function () {
     console.log("Xml generated");
   });
 }
