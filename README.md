@@ -14,4 +14,6 @@ in config.js e.g. CSV_INPUT_FILE : "{PATH_OF_CSV/XXX}.csv"
 
 ```console
 $ node index.js
+or 
+$ npm run generate:inventoryfeed
 ```
