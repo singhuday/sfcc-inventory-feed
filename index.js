@@ -1,14 +1,25 @@
 const { create } = require("xmlbuilder2");
 const csv = require("csv-parser");
 var fs = require("fs");
+const api = require("sfcc-ci");
+var archiver = require("./archiver").archiver;
 var results = [];
-const config = require('./config');
+const config = require("./config");
+
+var argv = require("yargs/yargs")(process.argv.slice(2)).argv;
+if (argv.upload) {
+  console.log("Upload");
+}
+
+if (argv.zip) {
+  console.log("zip");
+}
 
 fs.createReadStream(config.CSV_INPUT_FILE)
-    .on("error",function(error){
+  .on("error", function (error) {
     console.log("CSV file not found");
   })
-  .pipe(csv({skipLines: 1,headers:['ID']}))
+  .pipe(csv({ skipLines: 1, headers: ["ID"] }))
   .on("data", (row) => {
     results.push(row.ID);
   })
@@ -18,14 +29,16 @@ fs.createReadStream(config.CSV_INPUT_FILE)
 
 /**
  * @param {List} List of product ID
- * create xml based on product ids 
+ * create xml based on product ids
  */
 function createXML(list) {
   const doc = create({ version: "1.0" })
     .ele("inventory")
     .att("xmlns", "http://www.demandware.com/xml/impex/inventory/2007-05-31");
   var inventoryList = doc.ele("inventory-list");
-  var header = inventoryList.ele("header").att("list-id", config.INVENTORY_LIST_ID);
+  var header = inventoryList
+    .ele("header")
+    .att("list-id", config.INVENTORY_LIST_ID);
   header.ele("default-instock").txt("false");
   header.ele("description").txt("Product Sku US DC and US Stores");
   header.ele("use-bundle-inventory-only").txt("false");
@@ -46,5 +59,36 @@ function createXML(list) {
 
   fs.writeFile(config.XML_OUTPUT_FILE, xml, function () {
     console.log("Xml generated");
+
+    if (argv.zip) {
+      console.log("Creating archive");
+      archiver.zip(config.OUTPUT_FOLER, config.ARCHIEVE_NAME, []);
+    }
+
+    if (argv.zip && argv.upload) {
+      api.auth.auth(config.CLIENT_ID, config.CLIENT_SECRET, (error, token) => {
+        api.instance.upload(
+          config.STOREFRONT_HOSTNAME,
+          config.ARCHIEVE_NAME,
+          token,
+          {},
+          () => {
+            api.instance.import(
+              config.STOREFRONT_HOSTNAME,
+              config.ARCHIEVE_NAME,
+              token,
+              (error, response) => {
+                if (error) {
+                  console.log("Error " + error);
+                }
+                if (response) {
+                  console.log(`Job ${response.job_id} started , status = ${response.status}`);
+                }
+              }
+            );
+          }
+        );
+      });
+    }
   });
 }

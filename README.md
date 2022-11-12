@@ -17,3 +17,9 @@ $ node index.js
 or 
 $ npm run generate:inventoryfeed
 ```
+
+Below  command will generate , zip and upload the inventory file to instance mentioned in config file
+
+```console
+$ npm run generate:inventoryfeed:upload
+```
